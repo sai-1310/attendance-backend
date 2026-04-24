@@ -1,89 +1,81 @@
-console.log("MONGO_URI =", process.env.MONGO_URI);
-
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// ✅ MongoDB (IMPORTANT: use Render env variable)
+// ✅ MongoDB (Render ENV)
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.log("❌ Mongo Error:", err));
+  .then(() => console.log(" MongoDB Connected"))
+  .catch(err => console.log("Mongo Error:", err));
 
-// ================= SCHEMAS =================
-
+// ✅ Schema
 const AttendanceSchema = new mongoose.Schema({
   name: String,
   status: String,
   date: { type: Date, default: Date.now }
 });
 
+const Attendance = mongoose.model("Attendance", AttendanceSchema);
+
+// ✅ Student schema
 const StudentSchema = new mongoose.Schema({
   name: String
 });
 
-const Attendance = mongoose.model("Attendance", AttendanceSchema);
 const Student = mongoose.model("Student", StudentSchema);
 
-// ================= ROUTES =================
+// ✅ LOGIN
+async function login() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
 
-// Root
-app.get("/", (req, res) => {
-  res.send("🚀 Backend running");
-});
+  try {
+    const res = await fetch(`${BASE_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
 
-// LOGIN
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
+    const data = await res.json();
 
-  if (username === "admin" && password === "123") {
-    return res.json({ success: true, token: "abc123" });
+    if (data.success) {
+      document.getElementById("loginPage").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+      loadStudents();
+    } else {
+      alert("Invalid login");
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Backend not reachable ❌");
   }
+}
 
-  res.json({ success: false });
-});
-
-// ADD attendance
-app.post("/attendance", async (req, res) => {
-  const { name, status } = req.body;
-
-  const entry = new Attendance({ name, status });
-  await entry.save();
-
-  res.json({ message: "Saved" });
-});
-
-// UPDATE attendance
+// ✅ UPDATE attendance
 app.put("/attendance/:id", async (req, res) => {
+  const { status } = req.body;
+
   const updated = await Attendance.findByIdAndUpdate(
     req.params.id,
-    { status: req.body.status },
+    { status },
     { new: true }
   );
 
   res.json(updated);
 });
 
-// DELETE attendance
-app.delete("/attendance/:id", async (req, res) => {
-  await Attendance.findByIdAndDelete(req.params.id);
-  res.send("Deleted");
-});
-
-// GET all
+// ✅ GET all
 app.get("/attendance", async (req, res) => {
   const data = await Attendance.find();
   res.json(data);
 });
 
-// FILTER by date
-app.get("/attendance/date/:date", async (req, res) => {
+// ✅ FILTER by date
+app.get("/attendance/:date", async (req, res) => {
   const start = new Date(req.params.date);
   const end = new Date(start);
   end.setDate(end.getDate() + 1);
@@ -95,13 +87,19 @@ app.get("/attendance/date/:date", async (req, res) => {
   res.json(data);
 });
 
-// STUDENT-wise
+// ✅ STUDENT wise
 app.get("/attendance/student/:name", async (req, res) => {
   const data = await Attendance.find({ name: req.params.name });
   res.json(data);
 });
 
-// STUDENTS
+// ✅ DELETE
+app.delete("/attendance/:id", async (req, res) => {
+  await Attendance.findByIdAndDelete(req.params.id);
+  res.send("Deleted");
+});
+
+// ✅ STUDENTS
 app.post("/students", async (req, res) => {
   const student = new Student({ name: req.body.name });
   await student.save();
@@ -113,43 +111,19 @@ app.get("/students", async (req, res) => {
   res.json(data);
 });
 
-// ================= SERVER =================
-
+// ✅ SERVER
 const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
 
-const express = require("express");
-const mongoose = require("mongoose");
 
-const app = express();
+const cors = require("cors");
 
-// ✅ Use environment variable
-const MONGO_URI = process.env.MONGO_URI;
-
-// Debug (IMPORTANT)
-console.log("MONGO_URI:", MONGO_URI);
-
-// Safety check
-if (!MONGO_URI) {
-  console.error("❌ MONGO_URI not found");
-  process.exit(1);
-}
-
-// Connect DB
-mongoose.connect(MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.log("❌ Mongo Error:", err));
-
-// Test route
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.get("/", (req, res) => {
-  res.send("🚀 Backend running");
-});
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  res.send("Backend is running ✅");
 });
