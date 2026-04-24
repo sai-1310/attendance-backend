@@ -1,3 +1,6 @@
+console.log("MONGO_URI =", process.env.MONGO_URI);
+
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -116,4 +119,37 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+});
+
+const express = require("express");
+const mongoose = require("mongoose");
+
+const app = express();
+
+// ✅ Use environment variable
+const MONGO_URI = process.env.MONGO_URI;
+
+// Debug (IMPORTANT)
+console.log("MONGO_URI:", MONGO_URI);
+
+// Safety check
+if (!MONGO_URI) {
+  console.error("❌ MONGO_URI not found");
+  process.exit(1);
+}
+
+// Connect DB
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.log("❌ Mongo Error:", err));
+
+// Test route
+app.get("/", (req, res) => {
+  res.send("🚀 Backend running");
+});
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
