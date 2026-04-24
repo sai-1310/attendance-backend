@@ -1,6 +1,14 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+app.get("/", (req, res) => {
+  res.send("Backend is running ✅");
+});
 
 const app = express();
 app.use(cors());
@@ -117,13 +125,5 @@ app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
 
 
-const cors = require("cors");
 
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
-app.get("/", (req, res) => {
-  res.send("Backend is running ✅");
-});
+
