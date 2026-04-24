@@ -3,45 +3,117 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// ✅ MongoDB connection
-mongoose.connect("mongodb://127.0.0.1:27017/attendanceDB")
-.then(() => console.log("MongoDB Local Connected"))
-.catch(err => console.log(err));
+// ✅ MongoDB (IMPORTANT: use Render env variable)
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.log("❌ Mongo Error:", err));
 
-// ✅ Schema
+// ================= SCHEMAS =================
+
 const AttendanceSchema = new mongoose.Schema({
   name: String,
   status: String,
   date: { type: Date, default: Date.now }
 });
 
-const Attendance = mongoose.model("Attendance", AttendanceSchema);
-// POST API
-app.post("/attendance", async (req, res) => {
-  const { name, status } = req.body;
-  const newEntry = new Attendance({ name, status });
-  await newEntry.save();
-  res.send("Attendance saved");
+const StudentSchema = new mongoose.Schema({
+  name: String
 });
 
-// GET all records
+const Attendance = mongoose.model("Attendance", AttendanceSchema);
+const Student = mongoose.model("Student", StudentSchema);
+
+// ================= ROUTES =================
+
+// Root
+app.get("/", (req, res) => {
+  res.send("🚀 Backend running");
+});
+
+// LOGIN
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (username === "admin" && password === "123") {
+    return res.json({ success: true, token: "abc123" });
+  }
+
+  res.json({ success: false });
+});
+
+// ADD attendance
+app.post("/attendance", async (req, res) => {
+  const { name, status } = req.body;
+
+  const entry = new Attendance({ name, status });
+  await entry.save();
+
+  res.json({ message: "Saved" });
+});
+
+// UPDATE attendance
+app.put("/attendance/:id", async (req, res) => {
+  const updated = await Attendance.findByIdAndUpdate(
+    req.params.id,
+    { status: req.body.status },
+    { new: true }
+  );
+
+  res.json(updated);
+});
+
+// DELETE attendance
+app.delete("/attendance/:id", async (req, res) => {
+  await Attendance.findByIdAndDelete(req.params.id);
+  res.send("Deleted");
+});
+
+// GET all
 app.get("/attendance", async (req, res) => {
   const data = await Attendance.find();
   res.json(data);
 });
 
-// ✅ 👉 ADD HERE (student-wise API)
+// FILTER by date
+app.get("/attendance/date/:date", async (req, res) => {
+  const start = new Date(req.params.date);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+
+  const data = await Attendance.find({
+    date: { $gte: start, $lt: end }
+  });
+
+  res.json(data);
+});
+
+// STUDENT-wise
 app.get("/attendance/student/:name", async (req, res) => {
   const data = await Attendance.find({ name: req.params.name });
   res.json(data);
 });
 
-// (other APIs like PUT, DELETE can come here)
+// STUDENTS
+app.post("/students", async (req, res) => {
+  const student = new Student({ name: req.body.name });
+  await student.save();
+  res.send("Student added");
+});
 
-// Server start (LAST)
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+app.get("/students", async (req, res) => {
+  const data = await Student.find();
+  res.json(data);
+});
+
+// ================= SERVER =================
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
