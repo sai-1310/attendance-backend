@@ -4,16 +4,20 @@ const cors = require("cors");
 
 const app = express();
 
-// middleware
+// ✅ middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
+
+// ✅ 👉 PASTE MONGODB CONNECTION HERE
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
+  .catch(err => {
+    console.error("MongoDB ERROR:", err.message);
+  });
 
-// Root route
+
+// ✅ routes come AFTER connection
 app.get("/", (req, res) => {
   res.send("Backend is running ✅");
 });
