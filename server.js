@@ -1,62 +1,47 @@
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-// CONNECT DATABASE
-mongoose.connect("mongodb://127.0.0.1:27017/attendance");
+// ✅ MongoDB connection
+mongoose.connect("mongodb://127.0.0.1:27017/attendanceDB")
+.then(() => console.log("MongoDB Local Connected"))
+.catch(err => console.log(err));
 
-// MODELS
-const User = mongoose.model("User", {
-    username: String,
-    password: String
+// ✅ Schema
+const AttendanceSchema = new mongoose.Schema({
+  name: String,
+  status: String,
+  date: { type: Date, default: Date.now }
 });
 
-const Attendance = mongoose.model("Attendance", {
-    name: String,
-    date: String,
-    status: String
+const Attendance = mongoose.model("Attendance", AttendanceSchema);
+// POST API
+app.post("/attendance", async (req, res) => {
+  const { name, status } = req.body;
+  const newEntry = new Attendance({ name, status });
+  await newEntry.save();
+  res.send("Attendance saved");
 });
 
-// ROOT CHECK
-app.get('/', (req, res) => {
-    res.send("Backend is running");
+// GET all records
+app.get("/attendance", async (req, res) => {
+  const data = await Attendance.find();
+  res.json(data);
 });
 
-// LOGIN
-app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-
-    const user = await User.findOne({ username, password });
-
-    if (user) res.json({ success: true });
-    else res.json({ success: false });
+// ✅ 👉 ADD HERE (student-wise API)
+app.get("/attendance/student/:name", async (req, res) => {
+  const data = await Attendance.find({ name: req.params.name });
+  res.json(data);
 });
 
-// SAVE ATTENDANCE
-app.post('/attendance', async (req, res) => {
-    const { name, date, status } = req.body;
+// (other APIs like PUT, DELETE can come here)
 
-    await Attendance.findOneAndUpdate(
-        { name, date },
-        { status },
-        { upsert: true }
-    );
-
-    res.json({ success: true });
+// Server start (LAST)
+app.listen(5000, () => {
+  console.log("Server running on port 5000");
 });
-
-// GET ATTENDANCE
-app.get('/attendance/:date', async (req, res) => {
-    const data = await Attendance.find({ date: req.params.date });
-    res.json(data);
-});
-
-// PORT FIX (IMPORTANT FOR RENDER)
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => console.log("Server running"));
