@@ -1,3 +1,6 @@
+// const mongoose = require("mongoose");
+
+
 const express = require("express");
 const cors = require("cors");
 
@@ -82,4 +85,23 @@ app.get("/attendance", (req, res) => {
 const PORT = 5001;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+});
+
+
+// 📊 Attendance data (temporary memory)
+let attendance = [
+  { name: "Sai", status: "Present", date: new Date() },
+  { name: "Teja", status: "Absent", date: new Date() }
+];
+
+// GET all attendance
+app.get("/attendance", (req, res) => {
+  res.json(attendance);
+});
+
+// ADD attendance
+app.post("/attendance", (req, res) => {
+  const record = req.body;
+  attendance.push(record);
+  res.json({ success: true });
 });
