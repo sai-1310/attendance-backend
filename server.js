@@ -1,72 +1,85 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
 
-// ✅ middleware
+// ✅ Middleware
 app.use(cors());
 app.use(express.json());
 
-
-// ✅ 👉 PASTE MONGODB CONNECTION HERE
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => {
-    console.error("MongoDB ERROR:", err.message);
-  });
-
-
-// ✅ routes come AFTER connection
+// ✅ TEST ROUTE
 app.get("/", (req, res) => {
-  res.send("Backend is running ✅");
+  res.send("Backend Running 🚀");
 });
 
-// Schema
-const AttendanceSchema = new mongoose.Schema({
-  name: String,
-  status: String,
-  date: { type: Date, default: Date.now }
-});
-
-const Attendance = mongoose.model("Attendance", AttendanceSchema);
-
-// Login
+// ✅ LOGIN ROUTE
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
+  console.log("Login Request:", req.body);
+
+
+  let userProfile = {
+  name: "Sai Praneeth",
+  role: "student",
+  email: "saipraneeth@gmail.com",
+  phone: "7061717297",
+  course: "BTech - AI",
+  semester: "Semester 8",
+  avatar: ""
+};
+
+// GET profile
+app.get("/profile", (req, res) => {
+  res.json(userProfile);
+});
+
+// UPDATE profile
+app.post("/profile", (req, res) => {
+  userProfile = { ...userProfile, ...req.body };
+  res.json({ success: true, userProfile });
+});
+
+  // 🔥 SIMPLE HARDCODE LOGIN
   if (username === "admin" && password === "123") {
-    return res.json({ success: true });
+    return res.json({
+      success: true,
+      token: "admin-token",
+      role: "admin"
+    });
   }
 
-  res.json({ success: false });
+  if (username === "student" && password === "123") {
+    return res.json({
+      success: true,
+      token: "student-token",
+      role: "student"
+    });
+  }
+
+  return res.json({
+    success: false,
+    message: "Invalid credentials"
+  });
 });
 
-// Add attendance
-app.post("/attendance", async (req, res) => {
-  const { name, status } = req.body;
+// ✅ SAMPLE ATTENDANCE DATA
+app.get("/attendance", (req, res) => {
+  const data = [
+    { _id: 1, name: "Sai", status: "Present", date: new Date() },
+    { _id: 2, name: "Ravi", status: "Absent", date: new Date() },
+    { _id: 3, name: "Kiran", status: "Present", date: new Date() },
+    { _id: 4, name: "Ajay", status: "Present", date: new Date() },
+    { _id: 5, name: "Teja", status: "Absent", date: new Date() },
+    { _id: 6, name: "Rahul", status: "Present", date: new Date() },
+    { _id: 7, name: "Pavan", status: "Present", date: new Date() },
+  ];
 
-  const newEntry = new Attendance({ name, status });
-  await newEntry.save();
-
-  res.send("Saved");
-});
-
-// Get all
-app.get("/attendance", async (req, res) => {
-  const data = await Attendance.find();
   res.json(data);
 });
 
-// Student-wise
-app.get("/attendance/student/:name", async (req, res) => {
-  const data = await Attendance.find({ name: req.params.name });
-  res.json(data);
-});
-
-// Start server
-const PORT = process.env.PORT || 5000;
-
+// ✅ START SERVER
+const PORT = 5001;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
